@@ -97,7 +97,7 @@ Métricas del Sistema de Email:
       ${content}
     </div>
     <div class="footer">
-      ${footer || "Umi Consultoría - Sistema Automatizado"}
+      ${footer || "Umi - Sistema automatizado"}
     </div>
   </div>
 </body>

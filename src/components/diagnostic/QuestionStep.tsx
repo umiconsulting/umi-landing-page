@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 import ProgressBar from "./ProgressBar";
 
 export interface Question {
@@ -34,7 +35,7 @@ const QuestionStep = ({
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: -20 }}
     transition={{ duration: 0.3 }}
-    className="py-4"
+    className="py-2"
   >
     <ProgressBar
       currentStep={currentQuestion}
@@ -46,26 +47,28 @@ const QuestionStep = ({
       }}
     />
 
-    <div className="flex justify-between items-center mb-6">
-      <h3 className="font-domus font-semibold text-lg">{question.question}</h3>
-      <span className="text-sm text-gray-500">
+    <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <h3 className="max-w-2xl text-[clamp(24px,3vw,34px)] font-extrabold leading-[1.08] text-umi-blue-deep">
+        {question.question}
+      </h3>
+      <span className="text-sm font-bold text-[rgba(20,33,66,0.48)]">
         Pregunta {currentQuestion} de {totalQuestions}
       </span>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
       {question.options.map((option) => (
         <button
           key={option.value}
           onClick={() => onSelect(option.value)}
-          className={`bg-gray-100 hover:bg-umi-light-blue-40 p-4 rounded-lg text-left transition-colors ${
+          className={`rounded-[24px] border p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(34,57,121,0.1)] ${
             selectedValue === option.value
-              ? "ring-2 ring-umi-blue-dark bg-umi-light-blue-40"
-              : ""
+              ? "border-umi-blue-dark bg-[#eef3ff]"
+              : "border-[var(--stroke)] bg-[#fbf7ef] hover:border-umi-blue-dark/35"
           }`}
         >
-          <h4 className="font-semibold mb-2">{option.text}</h4>
-          <p className="text-sm text-gray-600">{option.description}</p>
+          <h4 className="mb-2 text-lg font-extrabold text-umi-blue-deep">{option.text}</h4>
+          <p className="text-sm font-semibold leading-[1.5] text-[rgba(20,33,66,0.62)]">{option.description}</p>
         </button>
       ))}
     </div>
@@ -74,24 +77,16 @@ const QuestionStep = ({
       {currentQuestion > 1 && (
         <button
           onClick={onPrevious}
-          className="text-umi-blue-dark hover:text-umi-light-blue flex items-center gap-2"
+          className="flex items-center gap-2 text-sm font-extrabold text-umi-blue-dark hover:text-umi-blue-deep"
         >
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-            <path
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M19 12H5M5 12L12 19M5 12L12 5"
-            />
-          </svg>
+          <ArrowLeft size={18} strokeWidth={1.8} />
           Anterior
         </button>
       )}
       <div></div> {/* Spacer */}
     </div>
 
-    <div className="text-center text-sm text-gray-500 pt-6 mt-6 border-t border-gray-200">
+    <div className="mt-6 border-t border-[var(--stroke)] pt-6 text-center text-sm font-bold text-[rgba(20,33,66,0.48)]">
       <p>
         {currentQuestion === totalQuestions
           ? "Última pregunta - ¡Ya casi terminas!"

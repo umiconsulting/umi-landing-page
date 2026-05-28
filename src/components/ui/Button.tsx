@@ -24,10 +24,10 @@ export const Button = ({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "py-3 px-6 rounded-md font-medium transition-colors",
+        "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-extrabold transition-all",
         variant === "primary"
-          ? "bg-umi-blue-dark text-white hover:bg-umi-blue-80"
-          : "bg-umi-light-blue text-white hover:bg-umi-light-blue-80",
+          ? "bg-umi-blue-dark text-white shadow-[0_14px_36px_rgba(34,57,121,0.22)] hover:bg-umi-blue-80"
+          : "border border-umi-blue-dark bg-transparent text-umi-blue-dark hover:bg-umi-blue-dark hover:text-white",
         disabled && "opacity-50 cursor-not-allowed hover:bg-current",
         className
       )}

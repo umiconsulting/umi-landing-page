@@ -1,26 +1,33 @@
 import "./globals.css";
-import { Inter, Source_Sans_3 } from "next/font/google";
+import { Fraunces, Nunito_Sans, Source_Code_Pro } from "next/font/google";
+import ShaderBackground from "@/components/background/ShaderBackground";
 
-// Configurar fuente principal (reemplazo de Domus)
-const inter = Inter({
+const nunito = Nunito_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
-  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-nunito",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-// Configurar fuente secundaria
-const sourceSansPro = Source_Sans_3({
+const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-source-sans",
-  weight: ["300", "400", "600"],
+  variable: "--font-fraunces",
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+});
+
+const sourceCode = Source_Code_Pro({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-source-code",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata = {
-  title: "Umi Consultoría - Análisis de datos e Inteligencia de Negocio",
+  title: "Umi — Sistema operativo para restaurantes conectados",
   description:
-    "Servicios especializados en análisis de información y business intelligence para la toma de decisiones estratégicas.",
+    "Umi conecta pedidos por WhatsApp, cocina, lealtad, monedero, tableros y observabilidad en una sola capa operativa para restaurantes.",
 };
 
 export default function RootLayout({
@@ -29,8 +36,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${inter.variable} ${sourceSansPro.variable}`}>
-      <body className="font-sans">{children}</body>
+    <html
+      lang="es"
+      className={`${nunito.variable} ${fraunces.variable} ${sourceCode.variable}`}
+    >
+      <body className="font-sans">
+        <ShaderBackground />
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as nodemailer from "nodemailer";
+import { createEmailService, getInternalEmail } from "@/lib/email/emailService";
 
 // Tipos para el formulario de contacto
 interface ContactFormData {
@@ -10,36 +10,14 @@ interface ContactFormData {
   message: string;
 }
 
-// Configuración del transportador de correo
-const createTransporter = () => {
-  // Usando Gmail/Google Workspace (recomendado para profesionales)
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER, // hola@umiconsulting.co
-      pass: process.env.EMAIL_PASSWORD, // App Password de Google
-    },
-  });
-
-  // Alternativa con SMTP personalizado (si tienes servidor propio):
-  // return nodemailer.createTransporter({
-  //   host: process.env.SMTP_HOST,
-  //   port: parseInt(process.env.SMTP_PORT || '587'),
-  //   secure: false,
-  //   auth: {
-  //     user: process.env.EMAIL_USER,
-  //     pass: process.env.EMAIL_PASSWORD,
-  //   },
-  // });
-};
-
 // Función para generar el template del correo para Umi
 const generateUmiEmailTemplate = (data: ContactFormData): string => {
   const needTranslations: Record<string, string> = {
-    emprendedor: "Emprendedor buscando estructurar datos",
-    pyme: "PyME con múltiples proyectos",
-    directivo: "Directivo que necesita decisiones basadas en datos",
-    otro: "Otra necesidad",
+    conversaflow: "Pedidos y atención por WhatsApp",
+    kds: "Cocina / KDS",
+    cash: "Lealtad / wallet",
+    suite: "Suite completa",
+    indeciso: "Aún no sabe por dónde empezar",
   };
 
   return `
@@ -79,13 +57,13 @@ const generateUmiEmailTemplate = (data: ContactFormData): string => {
             <span class="label">Cliente Potencial:</span>
             <div class="value priority-high">
               <strong>${data.name}</strong><br>
-              📧 ${data.email}<br>
-              🏢 ${data.company || "No especificada"}
+              Email: ${data.email}<br>
+              Empresa: ${data.company || "No especificada"}
             </div>
           </div>
 
           <div class="section">
-            <span class="label">Tipo de Necesidad:</span>
+            <span class="label">Producto o necesidad:</span>
             <div class="value priority-medium">
               ${needTranslations[data.need] || data.need}
             </div>
@@ -100,16 +78,16 @@ const generateUmiEmailTemplate = (data: ContactFormData): string => {
 
           <div class="stats">
             <div class="stat">
-              <div class="stat-number">⏱️</div>
-              <div class="stat-label">Responder en 2h</div>
+              <div class="stat-number">48h</div>
+              <div class="stat-label">Respuesta hábil</div>
             </div>
             <div class="stat">
-              <div class="stat-number">📊</div>
-              <div class="stat-label">Oportunidad BI</div>
+              <div class="stat-number">Umi</div>
+              <div class="stat-label">Ruta de producto</div>
             </div>
             <div class="stat">
-              <div class="stat-number">🎯</div>
-              <div class="stat-label">Lead cualificado</div>
+              <div class="stat-number">Ops</div>
+              <div class="stat-label">Contexto operativo</div>
             </div>
           </div>
 
@@ -121,7 +99,7 @@ const generateUmiEmailTemplate = (data: ContactFormData): string => {
         </div>
 
         <div class="footer">
-          <p><strong>Umi Consultoría</strong> - Análisis de datos e inteligencia de negocio</p>
+          <p><strong>Umi</strong> - Sistema operativo para restaurantes conectados</p>
           <p>Recibido: ${new Date().toLocaleString("es-ES", {
             timeZone: "America/Mexico_City",
             year: "numeric",
@@ -159,44 +137,44 @@ const generateClientAutoReply = (data: ContactFormData): string => {
       <div class="container">
         <div class="header">
           <div class="logo">umi</div>
-          <p>¡Gracias por contactarnos!</p>
+          <p>Gracias por contactarnos</p>
         </div>
         
         <div class="content">
           <p>Hola <strong>${data.name}</strong>,</p>
           
-          <p>Hemos recibido tu consulta y queremos agradecerte por considerar a Umi para tus necesidades de análisis de datos y business intelligence.</p>
+          <p>Hemos recibido tu consulta y queremos agradecerte por considerar Umi para conectar tu operación.</p>
 
           <div class="highlight">
             <strong>¿Qué sigue ahora?</strong><br>
-            • Revisaremos tu solicitud en las próximas 2 horas<br>
-            • Te contactaremos para agendar una consulta inicial gratuita<br>
-            • Prepararemos una propuesta personalizada según tus necesidades
+            • Revisaremos tu solicitud por producto y prioridad operativa<br>
+            • Te contactaremos para entender tu flujo actual<br>
+            • Prepararemos una ruta inicial sin inflar alcance
           </div>
 
-          <p>Mientras tanto, te invitamos a:</p>
+          <p>Mientras tanto, si no lo has hecho, puedes completar el diagnóstico operativo para ubicar el primer producto a activar.</p>
           <ul>
-            <li>Revisar nuestros <a href="https://umiconsultoria.com/casos-exito">casos de éxito</a></li>
-            <li>Completar nuestro <a href="https://umiconsultoria.com/diagnostico">diagnóstico gratuito</a> si aún no lo has hecho</li>
-            <li>Seguirnos en nuestras redes sociales para tips de análisis de datos</li>
+            <li>Pedidos por WhatsApp y ConversaFlow</li>
+            <li>Cocina con KDS</li>
+            <li>Lealtad, wallet, dashboard y logs</li>
           </ul>
 
           <div style="text-align: center;">
-            <a href="https://umiconsultoria.com/diagnostico" class="cta-button">
-              Realizar Diagnóstico Gratuito
+            <a href="https://umiconsulting.co/#diagnostico" class="cta-button">
+              Realizar diagnóstico
             </a>
           </div>
 
-          <p>¡Esperamos poder ayudarte a transformar tus datos en decisiones estratégicas!</p>
+          <p>Esperamos poder ayudarte a convertir mensajes, cocina y clientes en una operación más clara.</p>
           
           <p>Saludos cordiales,<br>
-          <strong>Equipo Umi Consultoría</strong></p>
+          <strong>Equipo Umi</strong></p>
         </div>
 
         <div class="footer">
-          <p><strong>Umi Consultoría</strong></p>
-          <p>📧 hola@umiconsulting.co | 📱 +52 667 730 1913</p>
-          <p>Análisis de datos e inteligencia de negocio</p>
+          <p><strong>Umi</strong></p>
+          <p>hola@umiconsulting.co | +52 667 730 1913</p>
+          <p>Sistema operativo para restaurantes conectados</p>
         </div>
       </div>
     </body>
@@ -225,14 +203,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const transporter = createTransporter();
+    const emailService = createEmailService();
+    const internalEmail = getInternalEmail();
 
     // Email para Umi (notificación interna)
     const umiMailOptions = {
-      from: `"Umi Consultoría" <${process.env.EMAIL_USER}>`,
-      to: "hola@umiconsulting.co",
-      subject: `🚀 Nueva consulta de ${data.name} - ${data.company || "Cliente potencial"}`,
+      to: internalEmail,
+      subject: `Nueva consulta Umi de ${data.name} - ${data.company || "Cliente potencial"}`,
       html: generateUmiEmailTemplate(data),
+      replyTo: data.email,
+      campaign: "contact_form",
+      priority: "high" as const,
       // También incluir versión texto plano para mejor deliverability
       text: `
         Nueva consulta recibida:
@@ -249,33 +230,50 @@ export async function POST(request: NextRequest) {
 
     // Email de respuesta automática al cliente
     const clientMailOptions = {
-      from: `"Umi Consultoría" <${process.env.EMAIL_USER}>`,
       to: data.email,
-      subject: "✅ Hemos recibido tu consulta - Umi Consultoría",
+      subject: "Hemos recibido tu consulta - Umi",
       html: generateClientAutoReply(data),
+      campaign: "contact_auto_reply",
+      priority: "normal" as const,
       text: `
         Hola ${data.name},
         
         Hemos recibido tu consulta y te contactaremos pronto.
         
-        Mientras tanto, puedes revisar nuestros recursos gratuitos en:
-        https://umiconsultoria.com/diagnostico
+        Mientras tanto, puedes completar el diagnóstico operativo en:
+        https://umiconsulting.co/#diagnostico
         
         Saludos,
-        Equipo Umi Consultoría
+        Equipo Umi
       `,
     };
 
-    // Enviar ambos emails
-    await Promise.all([
-      transporter.sendMail(umiMailOptions),
-      transporter.sendMail(clientMailOptions),
+    // Enviar ambos emails usando el servicio centralizado del repo original.
+    const result = await emailService.sendBulkEmails([
+      umiMailOptions,
+      clientMailOptions,
     ]);
+
+    emailService.close();
+
+    if (result.failed > 0) {
+      return NextResponse.json(
+        {
+          error: "Error enviando email",
+          details:
+            process.env.NODE_ENV === "development"
+              ? `${result.failed} de ${result.sent + result.failed} emails fallaron`
+              : undefined,
+        },
+        { status: 500 }
+      );
+    }
 
     // Log para debugging (remover en producción)
     console.log("Emails enviados exitosamente:", {
       cliente: data.email,
       empresa: data.company,
+      destinoInterno: internalEmail,
       timestamp: new Date().toISOString(),
     });
 

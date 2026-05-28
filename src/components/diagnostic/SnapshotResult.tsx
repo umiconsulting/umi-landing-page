@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import ProgressBar from "./ProgressBar";
+import { ArrowRight, Check, RotateCcw } from "lucide-react";
 
 interface SnapshotResultProps {
   score: number;
@@ -27,7 +28,7 @@ const SnapshotResult = ({
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: -20 }}
     transition={{ duration: 0.3 }}
-    className="py-6"
+    className="py-2"
   >
     <ProgressBar
       currentStep={4}
@@ -37,132 +38,73 @@ const SnapshotResult = ({
       }}
     />
 
-    <div className="text-center mb-6">
-      <h3 className="text-xl font-domus font-semibold text-gray-900 mb-3">
-        Tu diagnóstico preliminar está listo
-      </h3>
-      <div className="inline-block mb-4 p-3 rounded-full bg-umi-light-blue-40">
-        <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center">
-          <span className="text-4xl font-domus text-umi-blue-dark">
-            {score}/10
-          </span>
+    <div className="mb-8 grid gap-7 lg:grid-cols-[0.78fr_1.22fr] lg:items-stretch">
+      <div className="rounded-[28px] bg-umi-blue-dark p-6 text-white shadow-[0_24px_70px_rgba(34,57,121,0.22)]">
+        <div className="mb-5 text-sm font-extrabold uppercase text-white/62">
+          Puntuación operativa
+        </div>
+        <div className="flex items-end gap-2">
+          <span className="text-[118px] font-extrabold leading-[0.78]">{score}</span>
+          <span className="pb-2 text-2xl font-extrabold text-white/55">/10</span>
+        </div>
+        <div className="mt-6 rounded-2xl bg-white/10 p-4">
+          <p className="text-sm font-bold text-white/64">Nivel de operación conectada</p>
+          <p className="text-2xl font-extrabold">{levelName}</p>
         </div>
       </div>
-      <p className="text-lg font-medium text-gray-800 mb-2">
-        Nivel de madurez analítica: {levelName}
-      </p>
-      <p className="text-gray-600 max-w-xl mx-auto mb-4">{description}</p>
-    </div>
 
-    {/* Una recomendación de muestra para demostrar valor */}
-    <div className="bg-gray-50 p-6 rounded-lg mb-8">
-      <h4 className="font-domus font-semibold mb-3">
-        Oportunidad principal identificada:
-      </h4>
-      <p className="text-gray-600 mb-4">{primaryOpportunity}</p>
-      <div className="flex items-center text-umi-blue-dark">
-        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-          <path
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span className="text-sm">
-          Más de {opportunityPercentage}% de empresas similares enfrentan este
-          desafío
-        </span>
-      </div>
-    </div>
-
-    <div className="bg-umi-blue-dark/5 border border-umi-blue-dark/20 p-6 rounded-lg mb-8">
-      <div className="flex items-start">
-        <div className="flex-shrink-0 mt-1">
-          <svg
-            className="w-6 h-6 text-umi-blue-dark"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-9.618 5.04m-.023 7.032A11.955 11.955 0 0112 21.056a11.955 11.955 0 019.618-5.04m-9.618-9.072a3.18 3.18 0 00-.023 0m.023 0a3.18 3.18 0 01-.023 0M12 7.757a3 3 0 00-2.12 5.122 3 3 0 002.12.879 3 3 0 002.12-.879 3 3 0 00-2.12-5.122z"
-            />
-          </svg>
-        </div>
-        <div className="ml-4">
-          <h4 className="font-domus font-semibold text-gray-900 mb-2">
-            Tu informe completo está listo
+      <div className="rounded-[28px] border border-[var(--stroke)] bg-[#fbf7ef] p-6">
+        <h3 className="mb-3 text-[clamp(26px,3vw,38px)] font-extrabold leading-[1.06] text-umi-blue-deep">
+          Tu diagnóstico preliminar está listo
+        </h3>
+        <p className="mb-6 text-[16px] font-semibold leading-[1.6] text-[rgba(20,33,66,0.68)]">
+          {description}
+        </p>
+        <div className="rounded-[22px] bg-[#fffdf8] p-5">
+          <h4 className="mb-2 text-sm font-extrabold uppercase text-umi-blue-dark">
+            Oportunidad principal
           </h4>
-          <p className="text-gray-600 mb-4">
-            Recibe ahora tu estrategia personalizada con:
+          <p className="mb-4 text-[15px] font-semibold leading-[1.55] text-[rgba(20,33,66,0.68)]">
+            {primaryOpportunity}
           </p>
-          <ul className="space-y-2 mb-6">
-            <li className="flex items-center">
-              <svg
-                className="w-5 h-5 text-umi-blue-dark mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span>Diagnóstico detallado de tus 5 áreas de datos</span>
-            </li>
-            <li className="flex items-center">
-              <svg
-                className="w-5 h-5 text-umi-blue-dark mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span>Plan de acción personalizado de 3 pasos</span>
-            </li>
-            <li className="flex items-center">
-              <svg
-                className="w-5 h-5 text-umi-blue-dark mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span>Estimación de ROI potencial para tu negocio</span>
-            </li>
-          </ul>
-          <Button onClick={onContinue} variant="primary" className="w-full">
-            Obtener mi informe completo
-          </Button>
+          <div className="inline-flex rounded-full bg-[#fff2df] px-3 py-1.5 text-sm font-extrabold text-[#a86224]">
+            Prioridad estimada {opportunityPercentage}/3
+          </div>
         </div>
       </div>
+    </div>
+
+    <div className="mb-8 rounded-[26px] border border-umi-blue-dark/15 bg-[#eef3ff] p-6">
+      <h4 className="mb-4 text-xl font-extrabold text-umi-blue-deep">
+        Tu informe completo está listo
+      </h4>
+      <p className="mb-5 font-semibold text-[rgba(20,33,66,0.66)]">
+        Recibe una ruta más completa con:
+      </p>
+      <ul className="mb-6 grid gap-3 md:grid-cols-3">
+        {[
+          "Lectura de tus fricciones por producto Umi",
+          "Orden sugerido de activación",
+          "Riesgos operativos a resolver primero",
+        ].map((item) => (
+          <li key={item} className="flex items-start gap-2 rounded-[18px] bg-white/72 p-4 text-sm font-bold text-umi-blue-deep">
+            <Check size={17} className="mt-0.5 shrink-0 text-umi-blue-dark" strokeWidth={2} />
+              <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+      <Button onClick={onContinue} variant="primary" className="w-full">
+        Obtener mi informe completo
+        <ArrowRight size={18} strokeWidth={1.8} />
+      </Button>
     </div>
 
     <div className="text-center">
       <button
         onClick={onReset}
-        className="text-gray-500 hover:text-umi-blue-dark"
+        className="inline-flex items-center gap-2 text-sm font-extrabold text-[rgba(20,33,66,0.52)] hover:text-umi-blue-dark"
       >
+        <RotateCcw size={15} strokeWidth={1.8} />
         Reiniciar diagnóstico
       </button>
     </div>

@@ -1,138 +1,116 @@
 "use client";
 
+import { Menu, X, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+
+const Logo = () => (
+  <div className="flex items-center gap-2.5">
+    <svg width="32" height="20" viewBox="0 0 44 28" fill="none">
+      <path
+        d="M4 18 C 10 10, 16 10, 22 18 S 34 26, 40 18"
+        stroke="#223979"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M4 22 C 10 14, 16 14, 22 22 S 34 30, 40 22"
+        stroke="#223979"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.5"
+      />
+    </svg>
+    <span className="font-sans font-extrabold text-[22px] lowercase leading-none text-umi-blue-deep">
+      umi
+    </span>
+  </div>
+);
+
+const NAV_LINKS: Array<[string, string]> = [
+  ["Productos", "#productos"],
+  ["Sistema", "#proceso"],
+  ["Diagnóstico", "#diagnostico"],
+  ["Visión", "#testimonios"],
+];
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setIsScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-white shadow-md py-3" : "bg-transparent py-5"}`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "py-2.5 bg-[#fffdf8]/90 backdrop-blur-xl border-b border-[var(--stroke)] shadow-[0_10px_30px_rgba(34,57,121,0.08)]"
+          : "py-4 bg-transparent"
+      }`}
     >
-      <div className="container-wide flex justify-between items-center">
+      <div className="container-wide flex items-center gap-10">
         <Link href="/" className="flex items-center">
-          <span
-            className={`font-domus font-semibold text-2xl ${isScrolled ? "text-umi-blue-dark" : "text-white"}`}
-          >
-            umi
-          </span>
+          <Logo />
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-8">
-          <Link
-            href="#servicios"
-            className={`${isScrolled ? "text-gray-700" : "text-white"} hover:text-umi-light-blue transition-colors`}
-          >
-            Servicios
-          </Link>
-          <Link
-            href="#proceso"
-            className={`${isScrolled ? "text-gray-700" : "text-white"} hover:text-umi-light-blue transition-colors`}
-          >
-            Proceso
-          </Link>
-          <Link
-            href="#testimonios"
-            className={`${isScrolled ? "text-gray-700" : "text-white"} hover:text-umi-light-blue transition-colors`}
-          >
-            Testimonios
-          </Link>
-          <Link href="#contacto" className="btn-primary">
-            Solicitar consulta
+        <div className="hidden md:flex items-center gap-8 ml-auto">
+          {NAV_LINKS.map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-[14px] font-extrabold text-[rgba(20,33,66,0.72)] hover:text-umi-blue-deep transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="hidden md:flex items-center gap-5">
+          <span className="text-[11px] uppercase font-extrabold text-[rgba(20,33,66,0.46)]">
+            ES · EN
+          </span>
+          <Link href="#contacto" className="btn btn-primary btn-sm">
+            Contactar <ArrowRight size={14} strokeWidth={1.8} />
           </Link>
         </div>
 
-        {/* Mobile Menu Button */}
         <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className={`md:hidden ${isScrolled ? "text-umi-blue-dark" : "text-white"}`}
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="md:hidden ml-auto text-umi-blue-deep"
+          aria-label="Menu"
         >
-          {mobileMenuOpen ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          )}
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg py-4"
-        >
-          <div className="container-wide flex flex-col space-y-4">
-            <Link
-              href="#servicios"
-              className="text-gray-700 hover:text-umi-blue-dark"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Servicios
-            </Link>
-            <Link
-              href="#proceso"
-              className="text-gray-700 hover:text-umi-blue-dark"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Proceso
-            </Link>
-            <Link
-              href="#testimonios"
-              className="text-gray-700 hover:text-umi-blue-dark"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Testimonios
-            </Link>
+      {mobileOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-[#fffdf8]/95 backdrop-blur-xl border-b border-[var(--stroke)] py-4">
+          <div className="container-wide flex flex-col gap-3">
+            {NAV_LINKS.map(([label, href]) => (
+              <Link
+                key={href}
+                href={href}
+                className="text-[rgba(20,33,66,0.72)] hover:text-umi-blue-deep py-2 font-bold"
+                onClick={() => setMobileOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
             <Link
               href="#contacto"
-              className="btn-primary inline-block text-center"
-              onClick={() => setMobileMenuOpen(false)}
+              className="btn btn-primary mt-2 inline-flex w-fit"
+              onClick={() => setMobileOpen(false)}
             >
-              Solicitar consulta
+              Contactar
             </Link>
           </div>
-        </motion.div>
+        </div>
       )}
     </nav>
   );

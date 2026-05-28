@@ -1,226 +1,145 @@
 "use client";
 
+import {
+  ArrowRight,
+  Camera,
+  ChefHat,
+  Gift,
+  MessageSquareText,
+  MonitorDot,
+  Radar,
+  Utensils,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-const DataVisualizationHero = () => (
-  <div className="relative w-full h-80 md:h-96 lg:h-[500px] rounded-lg overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-br from-umi-blue-60 to-umi-light-blue-40"></div>
-
-    {/* Elementos de datos */}
-    <div className="absolute inset-0">
-      {/* Gráficas abstractas */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5 }}
-        className="absolute inset-0"
-      >
-        {/* Líneas de conexión */}
-        <svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 500 500"
-          className="absolute inset-0"
-        >
-          <motion.path
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2, ease: "easeInOut" }}
-            d="M100,100 Q150,50 200,100 T300,100 T400,100"
-            fill="none"
-            stroke="rgba(255,255,255,0.3)"
-            strokeWidth="2"
-          />
-          <motion.path
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2, delay: 0.5, ease: "easeInOut" }}
-            d="M100,200 Q200,150 300,200 T400,180"
-            fill="none"
-            stroke="rgba(255,255,255,0.3)"
-            strokeWidth="2"
-          />
-          <motion.path
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2, delay: 1, ease: "easeInOut" }}
-            d="M150,300 Q200,250 300,300 T450,320"
-            fill="none"
-            stroke="rgba(255,255,255,0.3)"
-            strokeWidth="2"
-          />
-        </svg>
-
-        {/* Puntos de datos */}
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.9 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="absolute top-1/4 left-1/5 w-6 h-6 bg-white rounded-full"
-        />
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.7 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-          className="absolute top-2/3 left-1/4 w-8 h-8 bg-white rounded-full"
-        />
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.6 }}
-          transition={{ duration: 0.5, delay: 1.2 }}
-          className="absolute bottom-1/4 left-1/2 w-10 h-10 bg-white rounded-full"
-        />
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.8 }}
-          transition={{ duration: 0.5, delay: 1.5 }}
-          className="absolute top-1/3 right-1/4 w-5 h-5 bg-white rounded-full"
-        />
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.9 }}
-          transition={{ duration: 0.5, delay: 1.8 }}
-          className="absolute top-1/2 right-1/3 w-7 h-7 bg-white rounded-full"
-        />
-
-        {/* Pequeñas barras de datos */}
-        <motion.div
-          initial={{ scaleY: 0, opacity: 0 }}
-          animate={{ scaleY: 1, opacity: 0.7 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="absolute bottom-1/4 left-1/3 w-3 h-20 bg-white origin-bottom"
-        />
-        <motion.div
-          initial={{ scaleY: 0, opacity: 0 }}
-          animate={{ scaleY: 1, opacity: 0.5 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="absolute bottom-1/4 left-1/3 ml-8 w-3 h-28 bg-white origin-bottom"
-        />
-        <motion.div
-          initial={{ scaleY: 0, opacity: 0 }}
-          animate={{ scaleY: 1, opacity: 0.6 }}
-          transition={{ duration: 0.8, delay: 0.7 }}
-          className="absolute bottom-1/4 left-1/3 ml-16 w-3 h-16 bg-white origin-bottom"
-        />
-        <motion.div
-          initial={{ scaleY: 0, opacity: 0 }}
-          animate={{ scaleY: 1, opacity: 0.8 }}
-          transition={{ duration: 0.8, delay: 0.9 }}
-          className="absolute bottom-1/4 left-1/3 ml-24 w-3 h-32 bg-white origin-bottom"
-        />
-      </motion.div>
-    </div>
-  </div>
-);
+const PRODUCTS = [
+  { name: "ConversaFlow", note: "Pedidos WhatsApp", icon: MessageSquareText, tone: "text-[#8FD2C0]" },
+  { name: "KDS", note: "Cocina en vivo", icon: ChefHat, tone: "text-[#F1C66B]" },
+  { name: "Cash", note: "Lealtad y wallet", icon: Gift, tone: "text-[#F08D74]" },
+  { name: "Dashboard", note: "Dueños y gerencia", icon: MonitorDot, tone: "text-[#BFD1F2]" },
+  { name: "Logs", note: "Observabilidad", icon: Radar, tone: "text-[#D7C7FF]" },
+];
 
 const Hero = () => {
   return (
-    <section className="bg-gradient-to-br from-umi-blue-dark to-umi-blue-80 text-white pt-28 pb-20 md:pt-32 md:pb-24">
-      <div className="container-wide">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-4xl md:text-5xl lg:text-6xl font-domus font-semibold leading-tight mb-6"
-            >
-              Decisiones estratégicas respaldadas por datos
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-xl md:text-2xl max-w-2xl mb-8 font-sans font-light"
-            >
-              Convertimos información compleja en visualizaciones claras y
-              recomendaciones accionables para potenciar el crecimiento de tu
-              negocio.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex flex-wrap gap-4"
-            >
-              <Link href="#diagnostico" className="btn-primary">
-                Diagnóstico gratuito
-              </Link>
-              <Link href="#servicios" className="btn-secondary">
-                Conocer servicios
-              </Link>
-            </motion.div>
+    <section
+      id="hero"
+      className="min-h-[86svh] pt-24 pb-14 px-6 sm:px-8 lg:px-10 flex items-center max-w-[1320px] mx-auto"
+      data-screen-label="01 Hero"
+    >
+      <div className="w-full grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] gap-12 lg:gap-16 items-center">
+        <div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="section-eyebrow mb-7"
+          >
+            <span className="section-eyebrow-rule" />
+            <span>Operaciones conectadas para restaurantes</span>
+          </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="mt-12 flex flex-wrap gap-6 md:gap-8"
-            >
-              <div className="flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-                <span>Para emprendedores</span>
-              </div>
-              <div className="flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-                <span>Para PyMEs</span>
-              </div>
-              <div className="flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-                <span>Para directivos</span>
-              </div>
-            </motion.div>
-          </div>
-          <div className="lg:col-span-6">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.3 }}
-            >
-              <DataVisualizationHero />
-            </motion.div>
-          </div>
+          <motion.h1
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.25 }}
+            className="font-sans text-[clamp(64px,9vw,122px)] font-extrabold leading-[0.88] text-umi-blue-deep m-0 mb-7 max-w-[760px]"
+          >
+            Umi
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.45 }}
+            className="font-sans text-[clamp(24px,2.4vw,34px)] leading-[1.12] font-extrabold text-umi-blue-deep max-w-[720px] mb-5"
+          >
+            Pedidos, cocina, lealtad y datos en un flujo que el restaurante sí puede seguir.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.55 }}
+            className="text-[16px] sm:text-[17px] leading-[1.62] text-[rgba(20,33,66,0.72)] max-w-[600px] mb-8 font-semibold"
+          >
+            Una suite para restaurantes que convierte conversaciones de WhatsApp en trabajo
+            visible: tickets, estados, recompensas, tableros y trazas.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.65 }}
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4"
+          >
+            <Link href="#productos" className="btn btn-primary btn-lg justify-center">
+              Ver productos <ArrowRight size={16} strokeWidth={1.8} />
+            </Link>
+            <Link href="#diagnostico" className="btn btn-link btn-lg justify-center">
+              Encontrar mi ruta <ArrowRight size={16} strokeWidth={1.8} />
+            </Link>
+          </motion.div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.35 }}
+          className="relative"
+          aria-label="Vista conceptual del sistema operativo Umi con espacio para fotografía"
+        >
+          <div className="photo-placeholder hero-photo min-h-[520px] sm:min-h-[620px]">
+            <span className="placeholder-caption flex items-center gap-2">
+              <Camera size={14} strokeWidth={2} />
+              Foto hero: cocina o mostrador
+            </span>
+            <div className="absolute inset-x-6 bottom-6 grid gap-3 sm:grid-cols-[1fr_0.72fr]">
+              <div className="product-cockpit">
+                <div className="cockpit-header">
+                  <div>
+                    <span className="cockpit-kicker">Pedido en vivo</span>
+                    <strong>2 bowls + bebida</strong>
+                  </div>
+                  <span className="live-pill">KDS</span>
+                </div>
+                <div className="pipeline">
+                  {["Recibido", "Cocina", "Listo"].map((item, index) => (
+                    <span key={item} className={index < 2 ? "active" : ""}>
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="hidden sm:flex rounded-[24px] border border-white/50 bg-white/82 p-4 shadow-[0_18px_50px_rgba(34,57,121,0.14)]">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff2df] text-[#a86224]">
+                    <Utensils size={20} strokeWidth={1.8} />
+                  </span>
+                  <div>
+                    <strong className="block text-[15px] text-umi-blue-deep">+120 puntos</strong>
+                    <span className="text-[12px] font-semibold text-[rgba(20,33,66,0.58)]">
+                      Cliente listo para volver
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="product-dock mt-4">
+            {PRODUCTS.map(({ name, note, icon: Icon, tone }) => (
+              <div key={name} className="dock-item">
+                <Icon size={18} className={tone} strokeWidth={1.8} />
+                <div>
+                  <strong>{name}</strong>
+                  <span>{note}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   );

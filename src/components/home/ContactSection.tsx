@@ -2,9 +2,7 @@
 
 import { useState, ChangeEvent, FormEvent } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/Button";
 
-// Estados del formulario
 type FormStatus = "idle" | "sending" | "success" | "error";
 
 interface FormState {
@@ -12,12 +10,33 @@ interface FormState {
   message: string;
 }
 
+const Arrow = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);
+
+const Check = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 12l5 5L20 6" />
+  </svg>
+);
+
+const NEEDS = [
+  { value: "conversaflow", label: "Pedidos WhatsApp" },
+  { value: "kds", label: "Cocina / KDS" },
+  { value: "cash", label: "Lealtad / Wallet" },
+  { value: "suite", label: "Suite completa" },
+];
+
+const CONTACT_EMAIL = "hola@umiconsulting.co";
+
 const ContactSection = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     company: "",
-    need: "emprendedor",
+    need: "suite",
     message: "",
   });
 
@@ -25,38 +44,38 @@ const ContactSection = () => {
     status: "idle",
     message: "",
   });
+  const [submittedName, setSubmittedName] = useState("");
+
+  const [privacy, setPrivacy] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    // Limpiar errores cuando el usuario empiece a escribir
-    if (formState.status === "error") {
-      setFormState({ status: "idle", message: "" });
-    }
+    if (formState.status === "error") setFormState({ status: "idle", message: "" });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setTouched({ name: true, email: true, company: true, message: true, privacy: true });
 
-    // Validación básica del frontend
     if (!formData.name.trim() || !formData.email.trim()) {
-      setFormState({
-        status: "error",
-        message: "Por favor completa todos los campos requeridos.",
-      });
+      setFormState({ status: "error", message: "Por favor completa los campos requeridos." });
       return;
     }
-
-    // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setFormState({
-        status: "error",
-        message: "Por favor ingresa un email válido.",
-      });
+      setFormState({ status: "error", message: "Por favor ingresa un email válido." });
+      return;
+    }
+    if (!formData.message.trim() || formData.message.trim().length < 10) {
+      setFormState({ status: "error", message: "Cuéntanos un poco más (10+ caracteres)." });
+      return;
+    }
+    if (!privacy) {
+      setFormState({ status: "error", message: "Debes aceptar el aviso de privacidad." });
       return;
     }
 
@@ -65,426 +84,283 @@ const ContactSection = () => {
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
       const result = await response.json();
 
       if (response.ok) {
+        setSubmittedName(formData.name);
         setFormState({
           status: "success",
           message:
-            "¡Gracias! Hemos recibido tu consulta. Te contactaremos pronto.",
+            "Gracias. Recibimos tu mensaje y te respondemos en menos de 48 horas hábiles.",
         });
-
-        // Limpiar formulario después del éxito
-        setFormData({
-          name: "",
-          email: "",
-          company: "",
-          need: "emprendedor",
-          message: "",
-        });
-
-        // Opcional: Tracking para analytics
+        setFormData({ name: "", email: "", company: "", need: "suite", message: "" });
+        setPrivacy(false);
         if (typeof window !== "undefined" && "gtag" in window) {
           const gtag = (window as { gtag: (...args: unknown[]) => void }).gtag;
-          gtag("event", "form_submit", {
-            event_category: "Contact",
-            event_label: formData.need,
-          });
+          gtag("event", "form_submit", { event_category: "Contact", event_label: formData.need });
         }
       } else {
         setFormState({
           status: "error",
-          message:
-            result.error ||
-            "Hubo un error al enviar tu consulta. Inténtalo de nuevo.",
+          message: result.error || "Hubo un error al enviar tu consulta. Inténtalo de nuevo.",
         });
       }
-    } catch (error) {
-      console.error("Error al enviar formulario:", error);
+    } catch (err) {
+      console.error("Error:", err);
       setFormState({
         status: "error",
-        message:
-          "Error de conexión. Verifica tu internet e inténtalo de nuevo.",
+        message: "Error de conexión. Verifica tu internet e inténtalo de nuevo.",
       });
     }
   };
 
-  // Función para obtener los colores del estado del formulario
-  const getStatusColor = () => {
-    switch (formState.status) {
-      case "success":
-        return "bg-green-50 border-green-200 text-green-800";
-      case "error":
-        return "bg-red-50 border-red-200 text-red-800";
-      default:
-        return "bg-blue-50 border-blue-200 text-blue-800";
-    }
-  };
-
   return (
-    <section id="contacto" className="py-20 bg-umi-blue-dark text-white">
-      <div className="container-wide">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Información de contacto */}
-          <div>
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-domus font-semibold mb-6"
-            >
-              ¿Listo para transformar tus datos en{" "}
-              <span className="text-umi-light-blue">ventaja competitiva</span>?
-            </motion.h2>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="text-lg text-gray-300 mb-8 leading-relaxed"
-            >
-              Contáctanos para una consulta personalizada. Analizaremos tu
-              situación actual y te presentaremos un plan de acción específico
-              para tu empresa.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              viewport={{ once: true }}
-              className="space-y-4"
-            >
-              <div className="flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2 text-umi-light-blue"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span className="text-sm font-medium">
-                  Consulta inicial gratuita de 30 minutos
-                </span>
-              </div>
-
-              <div className="flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2 text-umi-light-blue"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span className="text-sm font-medium">
-                  Análisis de tu situación actual sin compromiso
-                </span>
-              </div>
-
-              <div className="flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2 text-umi-light-blue"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-9.618 5.04m-.023 7.032A11.955 11.955 0 0112 21.056a11.955 11.955 0 019.618-5.04m-9.618-9.072a3.18 3.18 0 00-.023 0m.023 0a3.18 3.18 0 01-.023 0M12 7.757a3 3 0 00-2.12 5.122 3 3 0 002.12.879 3 3 0 002.12-.879 3 3 0 00-2.12-5.122z"
-                  />
-                </svg>
-                <span className="text-sm font-medium">
-                  Te contactaremos en las próximas 2 horas
-                </span>
-              </div>
-            </motion.div>
+    <section
+      id="contacto"
+      className="relative py-32 px-6 sm:px-8 lg:px-10 bg-umi-paper text-umi-blue-deep"
+      data-screen-label="06 Contacto"
+    >
+      <div className="container-wide grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+        {/* LEFT */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="pt-3.5 border-t border-[rgba(10,20,48,0.25)]"
+        >
+          <div className="inline-flex items-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-umi-blue-dark mt-3.5 mb-6">
+            <span className="h-px w-7 bg-umi-blue-dark" />
+            <span>Contacto</span>
           </div>
 
-          {/* Formulario de contacto */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="bg-white text-gray-900 p-8 rounded-lg shadow-lg"
-          >
-            <h3 className="font-domus font-semibold text-2xl mb-6">
-              Contáctanos
-            </h3>
+          <h2 className="font-serif text-[clamp(32px,4.2vw,54px)] font-light leading-[1.08] tracking-[-0.022em] text-umi-blue-deep m-0 mb-5">
+            ¿Listo para conectar tu operación
+            <br />
+            con <em className="not-italic italic text-umi-blue-dark font-light">productos Umi</em>?
+          </h2>
 
-            {/* Mensaje de estado */}
-            {formState.message && (
-              <div className={`p-4 rounded-lg border mb-6 ${getStatusColor()}`}>
-                <div className="flex items-center">
-                  {formState.status === "success" ? (
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                  )}
-                  <span className="text-sm font-medium">
-                    {formState.message}
-                  </span>
+          <p className="font-serif text-[17px] leading-[1.6] text-[rgba(10,20,48,0.72)] m-0 mb-8 max-w-[480px] font-light">
+            Cuéntanos dónde se rompe hoy el flujo: mensajes, cocina, clientes frecuentes,
+            visibilidad del dueño u observabilidad.
+          </p>
+
+          <ul className="list-none p-0 m-0 mb-10">
+            {[
+              "Revisión inicial por producto y prioridad operativa",
+              "Ruta sugerida sin inflar alcance",
+              "Confidencialidad garantizada si compartes datos sensibles",
+            ].map((t, i) => (
+              <li
+                key={i}
+                className={`flex items-center gap-3 py-2.5 text-[15px] text-[rgba(10,20,48,0.72)] border-b border-[rgba(10,20,48,0.12)] ${
+                  i === 0 ? "border-t border-[rgba(10,20,48,0.12)]" : ""
+                }`}
+              >
+                <span className="text-umi-accent flex-shrink-0">
+                  <Check />
+                </span>
+                {t}
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex flex-col gap-5 pt-7 border-t border-[rgba(10,20,48,0.25)]">
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[rgba(10,20,48,0.5)] mb-1.5">
+                Correo directo
+              </div>
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="font-serif text-lg text-umi-blue-deep tracking-[-0.01em] hover:text-umi-blue-dark"
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </div>
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[rgba(10,20,48,0.5)] mb-1.5">
+                WhatsApp
+              </div>
+              <div className="font-serif text-lg text-umi-blue-deep tracking-[-0.01em]">
+                +52 667 730 1913
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* RIGHT — Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="bg-white border border-[rgba(10,20,48,0.25)] p-7 sm:p-11"
+        >
+          {formState.status === "success" ? (
+            <div className="text-center py-12 px-4">
+              <div className="w-14 h-14 bg-umi-blue-dark text-white flex items-center justify-center mx-auto mb-6">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 12l5 5L20 6" />
+                </svg>
+              </div>
+              <div className="font-serif text-[28px] font-normal text-umi-blue-dark mb-3.5 tracking-[-0.015em]">
+                Gracias, {submittedName.split(" ")[0] || ""}.
+              </div>
+              <p className="text-[15px] leading-[1.6] text-[rgba(10,20,48,0.72)] mb-7">
+                {formState.message}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormState({ status: "idle", message: "" });
+                  setTouched({});
+                }}
+                className="font-mono text-[12px] tracking-[0.14em] uppercase text-umi-blue-dark border-b border-umi-blue-dark pb-1 hover:opacity-70"
+              >
+                Enviar otro mensaje
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="flex justify-between items-center mb-8 pb-5 border-b border-[rgba(10,20,48,0.12)]">
+                <div className="font-serif text-2xl font-normal text-umi-blue-dark tracking-[-0.015em]">
+                  Contáctanos
+                </div>
+                <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-[rgba(10,20,48,0.5)]">
+                  Respuesta en 48h
                 </div>
               </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Nombre *
-                  </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <label className="flex flex-col gap-2">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgba(10,20,48,0.72)]">
+                    Nombre
+                  </span>
                   <input
-                    type="text"
-                    id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    required
-                    disabled={formState.status === "sending"}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-umi-light-blue focus:border-umi-light-blue disabled:opacity-50"
-                    placeholder="Tu nombre completo"
+                    placeholder="Tu nombre"
+                    className={`font-sans text-[15px] px-3.5 py-3 border bg-white text-umi-blue-deep transition-all rounded-none focus:outline-none focus:border-umi-blue-dark focus:shadow-[inset_0_-2px_0_var(--color-umi-accent)] ${
+                      touched.name && !formData.name.trim()
+                        ? "border-[#B33]"
+                        : "border-[rgba(10,20,48,0.25)]"
+                    }`}
                   />
-                </div>
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email *
-                  </label>
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgba(10,20,48,0.72)]">
+                    Empresa
+                  </span>
+                  <input
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    placeholder="Nombre de tu organización"
+                    className="font-sans text-[15px] px-3.5 py-3 border border-[rgba(10,20,48,0.25)] bg-white text-umi-blue-deep transition-all rounded-none focus:outline-none focus:border-umi-blue-dark focus:shadow-[inset_0_-2px_0_var(--color-umi-accent)]"
+                  />
+                </label>
+              </div>
+
+              <div className="mb-5">
+                <label className="flex flex-col gap-2">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgba(10,20,48,0.72)]">
+                    Email
+                  </span>
                   <input
                     type="email"
-                    id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    required
-                    disabled={formState.status === "sending"}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-umi-light-blue focus:border-umi-light-blue disabled:opacity-50"
                     placeholder="tu@empresa.com"
+                    className={`font-sans text-[15px] px-3.5 py-3 border bg-white text-umi-blue-deep transition-all rounded-none focus:outline-none focus:border-umi-blue-dark focus:shadow-[inset_0_-2px_0_var(--color-umi-accent)] ${
+                      touched.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+                        ? "border-[#B33]"
+                        : "border-[rgba(10,20,48,0.25)]"
+                    }`}
                   />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="company"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Empresa
                 </label>
-                <input
-                  type="text"
-                  id="company"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleChange}
-                  disabled={formState.status === "sending"}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-umi-light-blue focus:border-umi-light-blue disabled:opacity-50"
-                  placeholder="Nombre de tu empresa"
-                />
               </div>
 
-              <div>
-                <label
-                  htmlFor="need"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  ¿Cuál es tu necesidad?
-                </label>
-                <select
-                  id="need"
-                  name="need"
-                  value={formData.need}
-                  onChange={handleChange}
-                  disabled={formState.status === "sending"}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-umi-light-blue focus:border-umi-light-blue disabled:opacity-50"
-                >
-                  <option value="emprendedor">
-                    Soy emprendedor buscando estructurar mis datos
-                  </option>
-                  <option value="pyme">
-                    Representamos una PyME con múltiples proyectos
-                  </option>
-                  <option value="directivo">
-                    Soy directivo y necesito tomar decisiones basadas en datos
-                  </option>
-                  <option value="otro">Otra necesidad</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="message"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Mensaje
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  rows={4}
-                  disabled={formState.status === "sending"}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-umi-light-blue focus:border-umi-light-blue disabled:opacity-50"
-                  placeholder="Cuéntanos sobre tu proyecto y necesidades específicas..."
-                />
-              </div>
-
-              <div>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-full flex items-center justify-center"
-                  disabled={formState.status === "sending"}
-                >
-                  {formState.status === "sending" ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
+              <div className="mb-5">
+                <div className="flex flex-col gap-2">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgba(10,20,48,0.72)]">
+                  ¿Qué producto te interesa?
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 mt-0.5">
+                    {NEEDS.map((n) => (
+                      <button
+                        type="button"
+                        key={n.value}
+                        onClick={() => setFormData((p) => ({ ...p, need: n.value }))}
+                        className={`px-4 py-2 text-[13px] font-medium border transition-all ${
+                          formData.need === n.value
+                            ? "bg-umi-blue-dark text-white border-umi-blue-dark"
+                            : "bg-white text-[rgba(10,20,48,0.72)] border-[rgba(10,20,48,0.25)] hover:border-umi-blue-dark hover:text-umi-blue-dark"
+                        }`}
                       >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Enviando...
-                    </>
-                  ) : (
-                    "Enviar mensaje"
-                  )}
-                </Button>
-
-                <p className="text-center text-xs text-gray-500 mt-3">
-                  Al enviar este formulario aceptas nuestra{" "}
-                  <a href="#" className="underline hover:text-umi-blue-dark">
-                    política de privacidad
-                  </a>
-                  . Te contactaremos en las próximas 2 horas.
-                </p>
-              </div>
-            </form>
-
-            {/* Información adicional de confianza */}
-            {formState.status !== "success" && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1 text-green-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-9.618 5.04m-.023 7.032A11.955 11.955 0 0112 21.056a11.955 11.955 0 019.618-5.04"
-                      />
-                    </svg>
-                    Respuesta garantizada
-                  </div>
-                  <div className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1 text-blue-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                    Datos seguros
-                  </div>
-                  <div className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1 text-purple-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                    Consulta gratuita
+                        {n.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
-            )}
-          </motion.div>
-        </div>
+
+              <div className="mb-5">
+                <label className="flex flex-col gap-2">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgba(10,20,48,0.72)]">
+                    Cuéntanos el contexto
+                  </span>
+                  <textarea
+                    name="message"
+                    rows={4}
+                    value={formData.message}
+                    onChange={handleChange}
+                    placeholder="Ej. Los pedidos llegan por WhatsApp y cocina los recaptura; queremos KDS y recompensas sin perder control..."
+                    className={`font-sans text-[15px] px-3.5 py-3 border bg-white text-umi-blue-deep transition-all rounded-none resize-y focus:outline-none focus:border-umi-blue-dark focus:shadow-[inset_0_-2px_0_var(--color-umi-accent)] ${
+                      touched.message && formData.message.trim().length < 10
+                        ? "border-[#B33]"
+                        : "border-[rgba(10,20,48,0.25)]"
+                    }`}
+                  />
+                </label>
+              </div>
+
+              <label className="flex items-start gap-2.5 my-3 mb-6 text-[13px] text-[rgba(10,20,48,0.72)] leading-[1.5] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={privacy}
+                  onChange={(e) => setPrivacy(e.target.checked)}
+                  className="mt-1 accent-umi-blue-dark"
+                />
+                <span className={touched.privacy && !privacy ? "text-[#B33]" : ""}>
+                  Acepto el tratamiento de datos conforme al aviso de privacidad.
+                </span>
+              </label>
+
+              {formState.status === "error" && (
+                <div className="mb-4 px-3.5 py-3 border border-[#B33] bg-[#FFF5F5] text-[#B33] text-[13px]">
+                  {formState.message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={formState.status === "sending"}
+                className="w-full btn btn-primary btn-lg justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {formState.status === "sending" ? "Enviando…" : (
+                  <>
+                    Enviar mensaje <Arrow />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+        </motion.div>
       </div>
     </section>
   );

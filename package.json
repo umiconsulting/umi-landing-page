@@ -11,7 +11,8 @@
     "test:watch": "jest --config jest.config.js --watch",
     "test:coverage": "jest --config jest.config.js --coverage",
     "test:integration": "jest --config jest.config.js --testPathPattern=integration",
-    "test:unit": "jest --config jest.config.js --testPathPattern=database"
+    "test:unit": "jest --config jest.config.js --testPathPattern=database",
+    "visual:screenshots": "bash scripts/visual-snapshots.sh"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.1",

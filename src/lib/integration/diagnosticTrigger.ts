@@ -114,8 +114,13 @@ export class DiagnosticTrigger {
     // Guardar en base de datos
     this.database.upsertLead(newLead);
 
-    // Determinar emails a enviar
-    const emailsToSend = this.calculateEmailsToSend(newLead);
+    // Fresh submissions send only the immediate welcome email. Short backfills
+    // can catch up on delayed follow-ups; very old imports restart at welcome.
+    const daysElapsed = this.database.getDaysElapsed(leadId);
+    const emailsToSend =
+      daysElapsed > 2 && daysElapsed <= 10
+        ? this.calculateEmailsToSend(newLead).filter((email) => email.day > 0)
+        : this.calculateEmailsToSend(newLead).filter((email) => email.day === 0);
 
     // Enviar emails inmediatos
     await this.sendScheduledEmails(leadId, emailsToSend);

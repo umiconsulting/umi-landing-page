@@ -181,21 +181,28 @@ function calculateDiagnostic(
   // Ejemplo de cálculo basado en preguntas típicas
   const scores = {
     dataCollection: calculateAreaScore(responses, [
+      "analytics_stage",
+      "data_challenge",
       "data_sources",
       "data_quality",
       "data_integration",
     ]),
     analysis: calculateAreaScore(responses, [
+      "analytics_stage",
+      "decision_basis",
       "analysis_tools",
       "analysis_frequency",
       "analysis_depth",
     ]),
     visualization: calculateAreaScore(responses, [
+      "analytics_stage",
       "visualization_tools",
       "dashboard_usage",
       "report_creation",
     ]),
     decisionMaking: calculateAreaScore(responses, [
+      "decision_basis",
+      "data_challenge",
       "decision_speed",
       "data_driven_decisions",
       "kpi_tracking",
@@ -218,23 +225,23 @@ function calculateDiagnostic(
   if (totalScore >= 8) {
     level = "Avanzado";
     recommendations = [
-      "Implementar análisis predictivo",
-      "Optimizar arquitectura de datos",
-      "Desarrollar cultura data-driven",
+      "Fortalecer observabilidad y trazas",
+      "Automatizar con controles de intervención",
+      "Medir el ciclo completo pedido-cocina-cliente",
     ];
   } else if (totalScore >= 5) {
     level = "Intermedio";
     recommendations = [
-      "Integrar sistemas existentes",
-      "Automatizar reportes básicos",
-      "Desarrollar dashboards interactivos",
+      "Conectar KDS, Cash y Dashboard",
+      "Unificar estados de pedidos y recompensas",
+      "Definir alertas operativas para gerencia",
     ];
   } else {
     level = "Inicial";
     recommendations = [
-      "Centralizar fuentes de datos",
-      "Implementar procesos básicos de captura",
-      "Establecer métricas clave",
+      "Activar ConversaFlow como entrada operativa",
+      "Estructurar el contrato mínimo de pedido y cliente",
+      "Crear la primera vista de seguimiento",
     ];
   }
 
@@ -292,6 +299,12 @@ function getScoreFromString(response: string): number {
     inicial: 1,
     intermedio: 3,
     avanzado: 5,
+    pedidos: 1,
+    cocina: 3,
+    clientes: 5,
+    recopilacion: 1,
+    organizacion: 3,
+    interpretacion: 5,
   };
 
   const normalized = response.toLowerCase().trim();

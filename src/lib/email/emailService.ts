@@ -7,7 +7,10 @@ import { EmailTemplateData } from "./templates";
 export interface EmailConfig {
   from: string;
   replyTo: string;
-  service: string;
+  service?: string;
+  host?: string;
+  port?: number;
+  secure?: boolean;
   auth: {
     user: string;
     pass: string;
@@ -19,6 +22,7 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
   priority?: "high" | "normal" | "low";
   campaign?: string;
   leadId?: string;
@@ -62,31 +66,77 @@ interface NodemailerInfo {
   response: string;
 }
 
+export const getInternalEmail = (): string =>
+  process.env.CONTACT_TO_EMAIL ||
+  process.env.ADMIN_EMAIL ||
+  process.env.TEST_EMAIL ||
+  process.env.EMAIL_USER ||
+  "hola@umiconsulting.co";
+
+const getEmailConfig = (): EmailConfig => {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPassword = process.env.SMTP_PASSWORD;
+
+  if (
+    smtpHost &&
+    smtpPassword &&
+    !smtpPassword.trim().startsWith("xsmtpsib-")
+  ) {
+    console.warn(
+      "⚠️ SMTP_PASSWORD no parece ser una clave SMTP Standard de Brevo. Debe empezar con xsmtpsib-, no con una API key ni contraseña de cuenta."
+    );
+  }
+
+  const config: EmailConfig = {
+    from: `"Umi" <${
+      process.env.EMAIL_FROM || process.env.EMAIL_USER || "hola@umiconsulting.co"
+    }>`,
+    replyTo: getInternalEmail(),
+    auth: {
+      user: smtpUser || process.env.EMAIL_USER || "",
+      pass: smtpPassword || process.env.EMAIL_PASSWORD || "",
+    },
+  };
+
+  if (smtpHost) {
+    config.host = smtpHost;
+    config.port = Number(process.env.SMTP_PORT || 587);
+    config.secure = config.port === 465;
+    return config;
+  }
+
+  config.service = process.env.EMAIL_SERVICE || "gmail";
+  return config;
+};
+
 export class EmailService {
   private transporter: nodemailer.Transporter;
   private config: EmailConfig;
   private metrics: EmailMetrics = { sent: 0, failed: 0 };
 
   constructor(config?: Partial<EmailConfig>) {
-    this.config = {
-      from: '"Ana Sofía - Umi Consultoría" <hola@umiconsulting.co>',
-      replyTo: "hola@umiconsulting.co",
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER || "",
-        pass: process.env.EMAIL_PASSWORD || "",
-      },
-      ...config,
-    };
+    this.config = { ...getEmailConfig(), ...config };
 
     // Inicializar transporter en el constructor
     this.transporter = this.createTransporter();
   }
 
   private createTransporter(): nodemailer.Transporter {
+    const transporterOptions = this.config.host
+      ? {
+          host: this.config.host,
+          port: this.config.port || 587,
+          secure: this.config.secure || false,
+          auth: this.config.auth,
+        }
+      : {
+          service: this.config.service,
+          auth: this.config.auth,
+        };
+
     const transporter = nodemailer.createTransport({
-      service: this.config.service,
-      auth: this.config.auth,
+      ...transporterOptions,
       pool: true, // Para múltiples emails
       maxConnections: 5,
       maxMessages: 100,
@@ -94,27 +144,34 @@ export class EmailService {
       rateLimit: 5, // máximo 5 emails por rateDelta
     });
 
-    // Verificar conexión
-    transporter.verify((error: Error | null) => {
-      if (error) {
-        console.error("❌ Error de configuración de email:", error);
-      } else {
-        console.log("✅ Servidor de email configurado correctamente");
-      }
-    });
+    if (process.env.NODE_ENV !== "test") {
+      transporter.verify((error: Error | null) => {
+        if (error) {
+          console.error("❌ Error de configuración de email:", error);
+        } else {
+          console.log("✅ Servidor de email configurado correctamente");
+        }
+      });
+    }
 
     return transporter;
   }
 
   async sendEmail(options: SendEmailOptions): Promise<boolean> {
     try {
+      if (!this.config.auth.user || !this.config.auth.pass) {
+        throw new Error(
+          "Missing email credentials. Configure SMTP_USER/SMTP_PASSWORD or EMAIL_USER/EMAIL_PASSWORD."
+        );
+      }
+
       const mailOptions = {
         from: this.config.from,
         to: options.to,
         subject: options.subject,
         html: options.html,
         text: options.text || this.htmlToText(options.html),
-        replyTo: this.config.replyTo,
+        replyTo: options.replyTo || this.config.replyTo,
         attachments: options.attachments,
 
         // Headers para tracking y deliverability
@@ -296,11 +353,11 @@ export class EmailService {
       diagnosticData: {
         score: 5,
         level: "Intermedio",
-        primaryChallenge: "Organización de datos",
+        primaryChallenge: "Operación desconectada",
         quickWins: [
           {
-            action: "Dashboard básico",
-            description: "Implementar KPIs principales",
+            action: "Mapa operativo",
+            description: "Definir entrada de pedido, cocina y cliente",
           },
         ],
         estimatedROI: {
@@ -312,21 +369,21 @@ export class EmailService {
 
     return this.sendEmail({
       to: toEmail,
-      subject: "🧪 Email de Prueba - Sistema Umi",
+      subject: "Email de prueba - Sistema Umi",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #223979;">✅ Test Email - Sistema Funcionando</h2>
+          <h2 style="color: #223979;">Test Email - Sistema funcionando</h2>
           <p>Hola <strong>${testData.contactInfo.name}</strong>,</p>
-          <p>Este es un email de prueba del sistema de Umi Consultoría.</p>
+          <p>Este es un email de prueba del sistema Umi.</p>
           <p><strong>Datos de prueba:</strong></p>
           <ul>
             <li>Nivel: ${testData.diagnosticData.level}</li>
             <li>Score: ${testData.diagnosticData.score}/10</li>
-            <li>ROI Estimado: ${testData.diagnosticData.estimatedROI.expectedReturn}%</li>
+            <li>Ruta: ${testData.diagnosticData.primaryChallenge}</li>
           </ul>
           <p>Si recibes este email, el sistema está configurado correctamente.</p>
           <hr>
-          <p style="font-size: 12px; color: #666;">Umi Consultoría - Sistema de Email Automatizado</p>
+          <p style="font-size: 12px; color: #666;">Umi - Sistema de email automatizado</p>
         </div>
       `,
       campaign: "test",

@@ -77,7 +77,7 @@ const ContactForm = ({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="py-6"
+      className="py-2"
     >
       <ProgressBar
         currentStep={5}
@@ -87,66 +87,62 @@ const ContactForm = ({
         }}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div>
-          <h3 className="font-domus font-semibold text-xl mb-3">
-            Tu informe personalizado está listo
+          <h3 className="mb-3 text-[clamp(26px,3vw,36px)] font-extrabold leading-[1.08] text-umi-blue-deep">
+            Tu ruta inicial está lista
           </h3>
-          <p className="text-gray-600 mb-6">
-            Completa tus datos para recibir inmediatamente:
+          <p className="mb-6 font-semibold text-[rgba(20,33,66,0.66)]">
+            Completa tus datos para recibir:
           </p>
 
           <div className="space-y-4 mb-6">
             <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-umi-blue-dark text-white flex items-center justify-center mr-3">
+              <div className="mr-3 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-umi-blue-dark text-sm font-extrabold text-white">
                 1
               </div>
               <div>
-                <h4 className="font-medium text-gray-900 mb-1">
-                  Análisis detallado personalizado
+                <h4 className="mb-1 font-extrabold text-umi-blue-deep">
+                  Lectura por producto
                 </h4>
-                <p className="text-sm text-gray-600">
-                  Diagnóstico completo de tu situación actual con
-                  recomendaciones específicas
+                <p className="text-sm font-semibold leading-[1.45] text-[rgba(20,33,66,0.62)]">
+                  Dónde entra ConversaFlow, KDS, Cash, Dashboard o Logs
                 </p>
               </div>
             </div>
 
             <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-umi-blue-dark text-white flex items-center justify-center mr-3">
+              <div className="mr-3 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-umi-blue-dark text-sm font-extrabold text-white">
                 2
               </div>
               <div>
-                <h4 className="font-medium text-gray-900 mb-1">
-                  Hoja de ruta estratégica
+                <h4 className="mb-1 font-extrabold text-umi-blue-deep">
+                  Orden de activación
                 </h4>
-                <p className="text-sm text-gray-600">
-                  Plan de acción paso a paso para implementar mejoras en tu
-                  organización
+                <p className="text-sm font-semibold leading-[1.45] text-[rgba(20,33,66,0.62)]">
+                  Qué conviene resolver primero para no inflar alcance
                 </p>
               </div>
             </div>
 
             <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-umi-blue-dark text-white flex items-center justify-center mr-3">
+              <div className="mr-3 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-umi-blue-dark text-sm font-extrabold text-white">
                 3
               </div>
               <div>
-                <h4 className="font-medium text-gray-900 mb-1">
-                  Estimación de ROI
+                <h4 className="mb-1 font-extrabold text-umi-blue-deep">
+                  Riesgos de operación
                 </h4>
-                <p className="text-sm text-gray-600">
-                  Cálculo del retorno de inversión esperado y tiempo de
-                  implementación
+                <p className="text-sm font-semibold leading-[1.45] text-[rgba(20,33,66,0.62)]">
+                  Qué puede romperse si se automatiza sin trazabilidad
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-umi-light-blue-40 p-4 rounded-lg">
-            <p className="text-sm text-umi-blue-dark font-medium">
-              📧 Te enviaremos el informe completo por email en los próximos
-              minutos
+          <div className="rounded-[22px] bg-[#eef3ff] p-4">
+            <p className="text-sm font-extrabold text-umi-blue-dark">
+              Te enviaremos la ruta por email y podremos revisarla contigo.
             </p>
           </div>
         </div>
@@ -162,7 +158,7 @@ const ContactForm = ({
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="mb-1 block text-sm font-extrabold text-[rgba(20,33,66,0.7)]"
               >
                 Nombre completo *
               </label>
@@ -172,7 +168,7 @@ const ContactForm = ({
                 name="name"
                 value={contactInfo.name}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-umi-blue-dark focus:border-transparent ${
+                className={`w-full rounded-2xl border bg-[#fffdf8] px-4 py-3 font-semibold text-umi-blue-deep outline-none focus:border-umi-blue-dark ${
                   validationErrors.name ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="Tu nombre completo"
@@ -188,7 +184,7 @@ const ContactForm = ({
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="mb-1 block text-sm font-extrabold text-[rgba(20,33,66,0.7)]"
               >
                 Email profesional *
               </label>
@@ -198,7 +194,7 @@ const ContactForm = ({
                 name="email"
                 value={contactInfo.email}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-umi-blue-dark focus:border-transparent ${
+                className={`w-full rounded-2xl border bg-[#fffdf8] px-4 py-3 font-semibold text-umi-blue-deep outline-none focus:border-umi-blue-dark ${
                   validationErrors.email ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="tu@empresa.com"
@@ -214,7 +210,7 @@ const ContactForm = ({
             <div>
               <label
                 htmlFor="company"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="mb-1 block text-sm font-extrabold text-[rgba(20,33,66,0.7)]"
               >
                 Empresa *
               </label>
@@ -224,7 +220,7 @@ const ContactForm = ({
                 name="company"
                 value={contactInfo.company}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-umi-blue-dark focus:border-transparent ${
+                className={`w-full rounded-2xl border bg-[#fffdf8] px-4 py-3 font-semibold text-umi-blue-deep outline-none focus:border-umi-blue-dark ${
                   validationErrors.company
                     ? "border-red-300"
                     : "border-gray-300"
@@ -242,7 +238,7 @@ const ContactForm = ({
             <div>
               <label
                 htmlFor="phone"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="mb-1 block text-sm font-extrabold text-[rgba(20,33,66,0.7)]"
               >
                 Teléfono (opcional)
               </label>
@@ -252,7 +248,7 @@ const ContactForm = ({
                 name="phone"
                 value={contactInfo.phone}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-umi-blue-dark focus:border-transparent"
+                className="w-full rounded-2xl border border-gray-300 bg-[#fffdf8] px-4 py-3 font-semibold text-umi-blue-deep outline-none focus:border-umi-blue-dark"
                 placeholder="+52 123 456 7890"
                 disabled={isLoading}
               />
@@ -261,7 +257,7 @@ const ContactForm = ({
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-colors ${
+              className={`w-full rounded-full px-4 py-3 font-extrabold text-white transition-colors ${
                 isLoading
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-umi-blue-dark hover:bg-umi-light-blue"
@@ -270,17 +266,17 @@ const ContactForm = ({
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Enviando diagnóstico...
+                  Enviando ruta...
                 </div>
               ) : (
-                "Recibir mi diagnóstico personalizado"
+                "Recibir mi ruta Umi"
               )}
             </button>
           </form>
 
-          <p className="text-xs text-gray-500 mt-4 text-center">
-            Al enviar este formulario aceptas recibir comunicaciones de Umi
-            Consultoría. No compartiremos tu información con terceros.
+          <p className="mt-4 text-center text-xs font-semibold text-[rgba(20,33,66,0.48)]">
+            Al enviar este formulario aceptas recibir comunicaciones de Umi.
+            No compartiremos tu información con terceros.
           </p>
         </div>
       </div>

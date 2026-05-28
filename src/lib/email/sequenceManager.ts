@@ -1,7 +1,7 @@
 // Manager de Secuencias Modular
 // src/lib/email/sequenceManager.ts
 
-import { EmailService, getEmailService } from "./emailService";
+import { EmailService, getEmailService, getInternalEmail } from "./emailService";
 import { EmailTemplates, EmailTemplateData } from "./templates";
 
 export interface Lead {
@@ -435,7 +435,7 @@ export class SequenceManager {
     `;
 
     await this.emailService.sendEmail({
-      to: "hola@umiconsulting.co",
+      to: getInternalEmail(),
       subject: "📈 Reporte Diario - Sistema de Secuencias",
       html: reportHtml,
       campaign: "daily_report",
@@ -462,7 +462,7 @@ ${errorStack}
     `;
 
     await this.emailService.sendEmail({
-      to: "hola@umiconsulting.co",
+      to: getInternalEmail(),
       subject: "🚨 Error Crítico - Sistema de Secuencias",
       html: errorHtml,
       priority: "high",

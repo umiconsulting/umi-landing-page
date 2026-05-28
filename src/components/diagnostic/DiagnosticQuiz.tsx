@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import Welcome from "./Welcome";
 import QuestionStep, { Question } from "./QuestionStep";
@@ -12,64 +12,64 @@ import FullResult from "./FullResult";
 const questions: Question[] = [
   {
     id: 1,
-    question: "¿En qué etapa de analítica de datos se encuentra tu empresa?",
+    question: "¿Dónde se concentra hoy el mayor cuello de botella?",
     options: [
       {
-        text: "Nivel Inicial",
-        value: "inicial",
-        description: "Datos dispersos o poco organizados",
+        text: "Pedidos",
+        value: "pedidos",
+        description: "WhatsApp, llamadas o mensajes se recapturan manualmente",
       },
       {
-        text: "Nivel Intermedio",
-        value: "intermedio",
-        description: "Datos organizados pero no optimizados",
+        text: "Cocina",
+        value: "cocina",
+        description: "Los tickets se pierden, duplican o avanzan sin visibilidad",
       },
       {
-        text: "Nivel Avanzado",
-        value: "avanzado",
-        description: "Datos organizados buscando mejorar",
+        text: "Clientes",
+        value: "clientes",
+        description: "No hay lealtad, wallet o recompensas consistentes",
       },
     ],
   },
   {
     id: 2,
-    question: "¿Cómo toma actualmente decisiones importantes en su negocio?",
+    question: "¿Qué tan visible es la operación para dueños o gerencia?",
     options: [
       {
-        text: "Intuición",
-        value: "intuicion",
-        description: "Basadas en experiencia o corazonadas",
+        text: "A ciegas",
+        value: "inicial",
+        description: "Se pregunta por chat o se espera al cierre",
       },
       {
-        text: "Datos básicos",
+        text: "Parcial",
         value: "datos_basicos",
-        description: "Consulta de informes simples",
+        description: "Hay reportes, pero no reflejan cocina, pedidos y wallet juntos",
       },
       {
-        text: "Análisis estructurado",
-        value: "analisis",
-        description: "Proceso formal de análisis de datos",
+        text: "En vivo",
+        value: "avanzado",
+        description: "Ya existen tableros y quieres integrarlos mejor",
       },
     ],
   },
   {
     id: 3,
-    question: "¿Cuál es tu principal desafío con los datos de tu negocio?",
+    question: "¿Qué necesitas para confiar en la automatización?",
     options: [
       {
-        text: "Recopilación",
+        text: "Orden",
         value: "recopilacion",
-        description: "Obtener y centralizar información",
+        description: "Separar mensajes, pedidos, clientes y eventos",
       },
       {
-        text: "Organización",
+        text: "Trazabilidad",
         value: "organizacion",
-        description: "Estructurar datos para su análisis",
+        description: "Saber qué pasó cuando algo falla o se cancela",
       },
       {
-        text: "Interpretación",
+        text: "Escala",
         value: "interpretacion",
-        description: "Extraer insights accionables",
+        description: "Operar más volumen sin meter más pasos manuales",
       },
     ],
   },
@@ -98,6 +98,7 @@ const DiagnosticQuiz = () => {
     status: "idle",
     message: "",
   });
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Inicializar tiempo de inicio cuando comience el quiz
   useEffect(() => {
@@ -105,6 +106,14 @@ const DiagnosticQuiz = () => {
       setStartTime(Date.now());
     }
   }, [stage, startTime]);
+
+  useEffect(() => {
+    if (stage === "welcome") return;
+    const t = window.setTimeout(() => {
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [stage, currentQuestion]);
 
   // Manejar selección de opción en las preguntas
   const handleOptionSelect = (value: string) => {
@@ -141,12 +150,15 @@ const DiagnosticQuiz = () => {
     const completionTime = Math.round((Date.now() - startTime) / 1000); // en segundos
 
     const diagnosticData = {
-      answers,
-      score: getScore(),
-      levelName: getLevelName(),
-      contactInfo: contactData,
-      completionTime,
-      timestamp: new Date().toISOString(),
+      email: contactData.email,
+      name: contactData.name,
+      company: contactData.company,
+      responses: {
+        analytics_stage: answers[1] || "",
+        decision_basis: answers[2] || "",
+        data_challenge: answers[3] || "",
+        completion_time_seconds: completionTime,
+      },
     };
 
     try {
@@ -238,16 +250,19 @@ const DiagnosticQuiz = () => {
         case "inicial":
         case "intuicion":
         case "recopilacion":
+        case "pedidos":
           score += 2;
           break;
         case "intermedio":
         case "datos_basicos":
         case "organizacion":
+        case "cocina":
           score += 5;
           break;
         case "avanzado":
         case "analisis":
         case "interpretacion":
+        case "clientes":
           score += 8;
           break;
       }
@@ -267,11 +282,11 @@ const DiagnosticQuiz = () => {
     const level = getLevelName();
     switch (level) {
       case "Inicial":
-        return "Tu empresa está comenzando en el mundo del análisis de datos. Hay una gran oportunidad de crecimiento implementando procesos básicos de organización de datos.";
+        return "Tu operación necesita primero una base clara: capturar pedidos, clientes y estados sin depender de recaptura manual.";
       case "Intermedio":
-        return "Tu empresa tiene una base sólida en datos, pero hay oportunidades significativas para optimizar procesos y obtener insights más profundos.";
+        return "Ya existe una base operativa, pero conviene conectar productos para que cocina, cliente y gerencia vean la misma historia.";
       case "Avanzado":
-        return "Tu empresa está bien posicionada en analítica de datos. El enfoque debe estar en optimización avanzada y análisis predictivo.";
+        return "Tu operación puede beneficiarse de observabilidad, automatización y medición fina para crecer sin perder control.";
       default:
         return "Evaluación completada.";
     }
@@ -281,11 +296,11 @@ const DiagnosticQuiz = () => {
     const level = getLevelName();
     switch (level) {
       case "Inicial":
-        return "Implementar un sistema básico de recolección y organización de datos que te permita tomar decisiones más informadas.";
+        return "Activar ConversaFlow como puerta de entrada y definir el contrato mínimo de pedido, cliente y estado.";
       case "Intermedio":
-        return "Automatizar procesos de análisis y crear dashboards dinámicos para reducir tiempo de generación de reportes.";
+        return "Conectar KDS, Cash y Dashboard para eliminar huecos entre cocina, recompensas y decisión gerencial.";
       case "Avanzado":
-        return "Desarrollar modelos predictivos que anticipen tendencias del mercado y optimicen la estrategia de negocio.";
+        return "Fortalecer Logs, trazas y alertas para auditar automatizaciones y detectar puntos de mejora.";
       default:
         return "Evaluación completada.";
     }
@@ -295,11 +310,11 @@ const DiagnosticQuiz = () => {
     const level = getLevelName();
     switch (level) {
       case "Inicial":
-        return 200;
+        return 3;
       case "Intermedio":
-        return 150;
+        return 2;
       case "Avanzado":
-        return 100;
+        return 1;
       default:
         return 0;
     }
@@ -314,55 +329,55 @@ const DiagnosticQuiz = () => {
       case "Inicial":
         return [
           {
-            title: "Auditoría de Datos",
+            title: "Base ConversaFlow",
             description:
-              "Mapeo completo de fuentes de datos actuales y identificación de gaps críticos.",
+              "Convertir conversaciones y pedidos en registros operativos claros.",
           },
           {
-            title: "Dashboard Básico",
+            title: "Primer tablero",
             description:
-              "Implementación de visualizaciones clave para KPIs principales del negocio.",
+              "Mostrar pedidos, clientes y estados sin esperar al cierre.",
           },
           {
-            title: "Procesos de Recolección",
+            title: "Contrato de operación",
             description:
-              "Establecimiento de flujos estructurados para captura consistente de datos.",
+              "Definir qué datos consume cocina, wallet y gerencia.",
           },
         ];
       case "Intermedio":
         return [
           {
-            title: "Automatización de Reportes",
+            title: "KDS conectado",
             description:
-              "Eliminación de procesos manuales y creación de reportes automáticos.",
+              "Pasar tickets a cocina con estados claros y acciones rápidas.",
           },
           {
-            title: "Integración de Sistemas",
+            title: "Cash y recurrencia",
             description:
-              "Conexión de fuentes de datos para una vista unificada del negocio.",
+              "Dar valor al cliente después de la compra con wallet y recompensas.",
           },
           {
-            title: "Análisis Avanzado",
+            title: "Dashboard de dueño",
             description:
-              "Implementación de métricas avanzadas y análisis de tendencias.",
+              "Unificar pedidos, miembros, estaciones e ingresos en una vista viva.",
           },
         ];
       case "Avanzado":
         return [
           {
-            title: "Modelos Predictivos",
+            title: "Observabilidad",
             description:
-              "Desarrollo de algoritmos para anticipar comportamientos y tendencias.",
+              "Auditar trazas, costos, errores y seguridad de la operación.",
           },
           {
-            title: "IA y Machine Learning",
+            title: "Automatización controlada",
             description:
-              "Implementación de soluciones de inteligencia artificial para optimización.",
+              "Aumentar volumen sin perder explicación ni capacidad de intervención.",
           },
           {
-            title: "Estrategia Data-Driven",
+            title: "Ciclos de mejora",
             description:
-              "Cultura organizacional basada completamente en datos y analytics.",
+              "Usar evidencia operacional para priorizar cambios de producto.",
           },
         ];
       default:
@@ -382,11 +397,25 @@ const DiagnosticQuiz = () => {
   const currentQuestionData: Question | null = getCurrentQuestion();
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div ref={containerRef} className="mx-auto max-w-5xl scroll-mt-32 overflow-hidden rounded-[30px] border border-[var(--stroke)] bg-[#fffdf8] text-umi-blue-deep shadow-[0_28px_90px_rgba(34,57,121,0.12)]">
+      <div className="border-b border-[var(--stroke)] bg-[#f7f0e7] px-5 py-4 sm:px-8">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5 text-[12px] font-extrabold uppercase text-umi-blue-dark">
+            <span className="h-2 w-2 rounded-full bg-umi-accent" />
+            Diagnóstico operativo
+          </div>
+          <div className="text-sm font-bold text-[rgba(20,33,66,0.58)]">
+            3 preguntas · ruta inicial
+          </div>
+        </div>
+      </div>
+      <div className="p-5 sm:p-8 lg:p-10">
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-umi-blue-dark mb-4"></div>
-          <p className="text-gray-600">Analizando tus respuestas...</p>
+          <p className="text-[rgba(10,20,48,0.72)]">
+            Analizando tus respuestas...
+          </p>
         </div>
       )}
 
@@ -488,6 +517,7 @@ const DiagnosticQuiz = () => {
           </AnimatePresence>
         </div>
       )}
+      </div>
     </div>
   );
 };
