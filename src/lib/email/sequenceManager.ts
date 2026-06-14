@@ -3,6 +3,10 @@
 
 import { EmailService, getEmailService, getInternalEmail } from "./emailService";
 import { EmailTemplates, EmailTemplateData } from "./templates";
+import { LeadDatabasePostgres, getLeadDatabasePostgres } from "../database/postgres";
+import { LeadDatabase } from "../database/sqlite";
+
+type AnyLeadDatabase = LeadDatabase | LeadDatabasePostgres;
 
 export interface Lead {
   id: string;
@@ -63,6 +67,8 @@ interface EmailConfig {
 export class SequenceManager {
   private emailService: EmailService;
   private sequences: Map<string, SequenceConfig> = new Map();
+  private database: AnyLeadDatabase | null = null;
+  private isPostgres: boolean = false;
   private metrics: SequenceMetrics = {
     totalLeads: 0,
     emailsSent: 0,
@@ -73,9 +79,23 @@ export class SequenceManager {
     sequenceCompletions: 0,
   };
 
-  constructor(emailService?: EmailService) {
+  constructor(emailService?: EmailService, database?: AnyLeadDatabase) {
     this.emailService = emailService || getEmailService();
     this.initializeSequences();
+    if (database) {
+      this.database = database;
+      this.isPostgres = database instanceof LeadDatabasePostgres;
+    } else {
+      // Auto-detect from env
+      const dbType = process.env.DATABASE_TYPE || "sqlite";
+      if (dbType === "postgres") {
+        this.database = getLeadDatabasePostgres();
+        this.isPostgres = true;
+      } else {
+        this.database = new LeadDatabase();
+        this.isPostgres = false;
+      }
+    }
   }
 
   private initializeSequences() {
@@ -356,7 +376,14 @@ export class SequenceManager {
   // Métodos de gestión de leads
   async pauseSequenceForLead(leadId: string, reason: string): Promise<boolean> {
     try {
-      // En producción, actualizar en base de datos
+      if (this.isPostgres) {
+        await (this.database as LeadDatabasePostgres).pauseSequenceAsync(
+          leadId,
+          reason
+        );
+      } else {
+        (this.database as LeadDatabase).pauseSequence(leadId, reason);
+      }
       console.log(`⏸️ Pausando secuencias para lead ${leadId}: ${reason}`);
       return true;
     } catch (error) {
@@ -367,7 +394,13 @@ export class SequenceManager {
 
   async resumeSequenceForLead(leadId: string): Promise<boolean> {
     try {
-      // En producción, actualizar en base de datos
+      if (this.isPostgres) {
+        await (this.database as LeadDatabasePostgres).resumeSequenceAsync(
+          leadId
+        );
+      } else {
+        (this.database as LeadDatabase).resumeSequence(leadId);
+      }
       console.log(`▶️ Reanudando secuencias para lead ${leadId}`);
       return true;
     } catch (error) {
@@ -385,6 +418,19 @@ export class SequenceManager {
 
       if (responseType === "meeting") {
         this.metrics.meetingsScheduled++;
+      }
+
+      // Pause sequence when lead responds
+      if (this.isPostgres) {
+        await (this.database as LeadDatabasePostgres).pauseSequenceAsync(
+          leadId,
+          `Lead responded via ${responseType}`
+        );
+      } else {
+        (this.database as LeadDatabase).pauseSequence(
+          leadId,
+          `Lead responded via ${responseType}`
+        );
       }
 
       console.log(`✅ Lead ${leadId} marcado como respondido: ${responseType}`);
@@ -413,9 +459,71 @@ export class SequenceManager {
   }
 
   private async getActiveLeads(): Promise<Lead[]> {
-    // En producción, consultar base de datos
-    // Por ahora retornamos array vacío para testing
-    return [];
+    if (!this.database) return [];
+
+    if (this.isPostgres) {
+      const pgDb = this.database as LeadDatabasePostgres;
+      const leads = await pgDb.getActiveLeadsAsync();
+      return leads.map((ld) => {
+        const lead: Lead = {
+          id: ld.id,
+          email: ld.email,
+          name: ld.name,
+          company: ld.company || "",
+          diagnosticDate: new Date(ld.diagnosticDate),
+          meetingScheduled: false,
+          meetingAttended: false,
+          emailsSent: ld.emailsSent,
+          sequencePaused: ld.sequencePaused,
+          ...(ld.pauseReason ? { pauseReason: ld.pauseReason } : {}),
+          diagnosticData: {
+            score: ld.diagnosticData.score,
+            level: ld.diagnosticData.level,
+            primaryChallenge: ld.diagnosticData.recommendations[0] || "",
+            quickWins: ld.diagnosticData.recommendations.map((r) => ({
+              action: r,
+              description: "",
+            })),
+            estimatedROI: {
+              timeToValue: 0,
+              expectedReturn: 0,
+            },
+          },
+        };
+        return lead;
+      });
+    }
+
+    const sqliteDb = this.database as LeadDatabase;
+    const leads = sqliteDb.getActiveLeads();
+    return leads.map((ld) => {
+      const lead: Lead = {
+        id: ld.id,
+        email: ld.email,
+        name: ld.name,
+        company: ld.company || "",
+        diagnosticDate: new Date(ld.diagnosticDate),
+        meetingScheduled: false,
+        meetingAttended: false,
+        emailsSent: ld.emailsSent,
+        sequencePaused: ld.sequencePaused,
+        ...(ld.pauseReason ? { pauseReason: ld.pauseReason } : {}),
+        diagnosticData: {
+          score: ld.diagnosticData.score,
+          level: ld.diagnosticData.level,
+          primaryChallenge: ld.diagnosticData.recommendations[0] || "",
+          quickWins: ld.diagnosticData.recommendations.map((r) => ({
+            action: r,
+            description: "",
+          })),
+          estimatedROI: {
+            timeToValue: 0,
+            expectedReturn: 0,
+          },
+        },
+      };
+      return lead;
+    });
   }
 
   private async sendDailyReport(): Promise<void> {

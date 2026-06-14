@@ -1,6 +1,15 @@
 // src/lib/integration/diagnosticTrigger.ts
 import { getSequenceManager } from "../email/sequenceManager";
-import { LeadDatabase, DiagnosticData, LeadData } from "../database/sqlite";
+import {
+  LeadDatabase,
+  DiagnosticData,
+  LeadData,
+  EmailLog,
+} from "../database/sqlite";
+import {
+  LeadDatabasePostgres,
+  getLeadDatabasePostgres,
+} from "../database/postgres";
 import { v4 as uuidv4 } from "uuid";
 
 // Interface para el resultado del procesamiento
@@ -48,26 +57,95 @@ export interface DiagnosticSubmission {
   submissionDate: string;
 }
 
-export class DiagnosticTrigger {
-  private database: LeadDatabase;
-  private sequenceManager: unknown; // CAMBIO: Usar unknown en lugar de Record<string, unknown>
+// Union type for either database adapter
+type AnyLeadDatabase = LeadDatabase | LeadDatabasePostgres;
 
-  constructor() {
-    this.database = new LeadDatabase();
+export class DiagnosticTrigger {
+  private database: AnyLeadDatabase;
+  private isPostgres: boolean;
+  private sequenceManager: unknown;
+
+  constructor(database?: AnyLeadDatabase) {
+    if (database) {
+      this.database = database;
+      this.isPostgres = database instanceof LeadDatabasePostgres;
+    } else {
+      const dbType = process.env.DATABASE_TYPE || "sqlite";
+      if (dbType === "postgres") {
+        this.database = getLeadDatabasePostgres();
+        this.isPostgres = true;
+      } else {
+        this.database = new LeadDatabase();
+        this.isPostgres = false;
+      }
+    }
     this.sequenceManager = getSequenceManager();
   }
 
-  /**
-   * Procesar diagnóstico - método principal
-   */
+  // ---- Async wrappers that normalize sync vs async adapters ----
+
+  private async findLeadByEmail(email: string): Promise<LeadData | null> {
+    if (this.isPostgres) {
+      return (this.database as LeadDatabasePostgres).findLeadByEmailAsync(email);
+    }
+    return (this.database as LeadDatabase).findLeadByEmail(email);
+  }
+
+  private async upsertLead(leadData: LeadData): Promise<LeadData> {
+    if (this.isPostgres) {
+      return (this.database as LeadDatabasePostgres).upsertLeadAsync(leadData);
+    }
+    return (this.database as LeadDatabase).upsertLead(leadData);
+  }
+
+  private async wasEmailSent(
+    leadId: string,
+    sequenceDay: number
+  ): Promise<boolean> {
+    if (this.isPostgres) {
+      return (this.database as LeadDatabasePostgres).wasEmailSentAsync(
+        leadId,
+        sequenceDay
+      );
+    }
+    return (this.database as LeadDatabase).wasEmailSent(leadId, sequenceDay);
+  }
+
+  private async logEmailSent(emailLog: EmailLog): Promise<void> {
+    if (this.isPostgres) {
+      return (this.database as LeadDatabasePostgres).logEmailSentAsync(emailLog);
+    }
+    return (this.database as LeadDatabase).logEmailSent(emailLog);
+  }
+
+  private async getDaysElapsed(leadId: string): Promise<number> {
+    if (this.isPostgres) {
+      return (this.database as LeadDatabasePostgres).getDaysElapsedAsync(leadId);
+    }
+    return (this.database as LeadDatabase).getDaysElapsed(leadId);
+  }
+
+  private async getLeadsPendingEmails(): Promise<
+    (LeadData & { daysElapsed: number })[]
+  > {
+    if (this.isPostgres) {
+      return (
+        this.database as LeadDatabasePostgres
+      ).getLeadsPendingEmailsAsync();
+    }
+    return (this.database as LeadDatabase).getLeadsPendingEmails();
+  }
+
+  // -----------------------------------------------------------------------
+  // processDiagnostic
+  // -----------------------------------------------------------------------
   async processDiagnostic(
     submission: DiagnosticSubmission
   ): Promise<ProcessDiagnosticResult> {
     try {
-      // Validar entrada
       this.validateSubmission(submission);
 
-      const existingLead = this.database.findLeadByEmail(submission.email);
+      const existingLead = await this.findLeadByEmail(submission.email);
 
       if (existingLead) {
         return await this.updateExistingLead(existingLead, submission);
@@ -80,9 +158,9 @@ export class DiagnosticTrigger {
     }
   }
 
-  /**
-   * Crear nuevo lead
-   */
+  // -----------------------------------------------------------------------
+  // createNewLead
+  // -----------------------------------------------------------------------
   private async createNewLead(
     submission: DiagnosticSubmission
   ): Promise<ProcessDiagnosticResult> {
@@ -95,7 +173,6 @@ export class DiagnosticTrigger {
       areas: submission.diagnosticResult.areas,
     };
 
-    // Construir objeto base
     const newLead: LeadData = {
       id: leadId,
       email: submission.email,
@@ -106,23 +183,22 @@ export class DiagnosticTrigger {
       diagnosticData,
     };
 
-    // Añadir company solo si existe
     if (submission.company) {
       newLead.company = submission.company;
     }
 
-    // Guardar en base de datos
-    this.database.upsertLead(newLead);
+    await this.upsertLead(newLead);
+
+    const daysElapsed = await this.getDaysElapsed(leadId);
+    const allEmails = this.calculateEmailsToSend(newLead);
 
     // Fresh submissions send only the immediate welcome email. Short backfills
     // can catch up on delayed follow-ups; very old imports restart at welcome.
-    const daysElapsed = this.database.getDaysElapsed(leadId);
     const emailsToSend =
       daysElapsed > 2 && daysElapsed <= 10
-        ? this.calculateEmailsToSend(newLead).filter((email) => email.day > 0)
-        : this.calculateEmailsToSend(newLead).filter((email) => email.day === 0);
+        ? allEmails.filter((email) => email.day > 0)
+        : allEmails.filter((email) => email.day === 0);
 
-    // Enviar emails inmediatos
     await this.sendScheduledEmails(leadId, emailsToSend);
 
     return {
@@ -133,14 +209,13 @@ export class DiagnosticTrigger {
     };
   }
 
-  /**
-   * Actualizar lead existente
-   */
+  // -----------------------------------------------------------------------
+  // updateExistingLead
+  // -----------------------------------------------------------------------
   private async updateExistingLead(
     existingLead: LeadData,
     submission: DiagnosticSubmission
   ): Promise<ProcessDiagnosticResult> {
-    // Actualizar datos
     const updatedDiagnosticData: DiagnosticData = {
       score: submission.diagnosticResult.score,
       level: submission.diagnosticResult.level,
@@ -148,7 +223,6 @@ export class DiagnosticTrigger {
       areas: submission.diagnosticResult.areas,
     };
 
-    // Construir objeto actualizado paso a paso
     const updatedLead: LeadData = {
       id: existingLead.id,
       email: existingLead.email,
@@ -159,7 +233,6 @@ export class DiagnosticTrigger {
       diagnosticData: updatedDiagnosticData,
     };
 
-    // Añadir propiedades opcionales solo si existen
     if (submission.company) {
       updatedLead.company = submission.company;
     } else if (existingLead.company) {
@@ -169,23 +242,18 @@ export class DiagnosticTrigger {
     if (existingLead.lastEmailSent) {
       updatedLead.lastEmailSent = existingLead.lastEmailSent;
     }
-
     if (existingLead.pauseReason) {
       updatedLead.pauseReason = existingLead.pauseReason;
     }
-
     if (existingLead.createdAt) {
       updatedLead.createdAt = existingLead.createdAt;
     }
-
     if (existingLead.updatedAt) {
       updatedLead.updatedAt = existingLead.updatedAt;
     }
 
-    // Guardar cambios
-    this.database.upsertLead(updatedLead);
+    await this.upsertLead(updatedLead);
 
-    // Calcular emails pendientes (excluyendo ya enviados)
     const emailsToSend = this.calculateEmailsToSend(updatedLead);
 
     return {
@@ -196,19 +264,21 @@ export class DiagnosticTrigger {
     };
   }
 
-  /**
-   * Calcular emails que deben enviarse según días transcurridos
-   */
-  // En src/lib/integration/diagnosticTrigger.ts
+  // -----------------------------------------------------------------------
+  // calculateEmailsToSend
+  // -----------------------------------------------------------------------
   private calculateEmailsToSend(lead: LeadData): Array<{
     template: string;
     day: number;
     subject: string;
   }> {
-    const daysElapsed = this.database.getDaysElapsed(lead.id);
-    const emailsToSend = [];
+    // Use sync method for calculation (both adapters support it)
+    const daysElapsed = this.isPostgres
+      ? 0
+      : (this.database as LeadDatabase).getDaysElapsed(lead.id);
+    const emailsToSend: Array<{ template: string; day: number; subject: string }> =
+      [];
 
-    // Secuencia de emails programados
     const emailSequence = [
       { day: 0, template: "diagnostic_welcome", subject: "Bienvenida" },
       { day: 2, template: "diagnostic_followup_1", subject: "Seguimiento 1" },
@@ -217,10 +287,10 @@ export class DiagnosticTrigger {
     ];
 
     for (const emailConfig of emailSequence) {
-      // FIX: Solo incluir si es exactamente el día correcto Y no se ha enviado
+      // For postgres we can't check synchronously — handled at send time
       if (
-        daysElapsed >= emailConfig.day &&
-        !this.database.wasEmailSent(lead.id, emailConfig.day)
+        daysElapsed >= emailConfig.day ||
+        this.isPostgres
       ) {
         emailsToSend.push(emailConfig);
       }
@@ -229,13 +299,19 @@ export class DiagnosticTrigger {
     return emailsToSend;
   }
 
+  // -----------------------------------------------------------------------
+  // calculatePendingEmails
+  // -----------------------------------------------------------------------
   private calculatePendingEmails(lead: LeadData): Array<{
     template: string;
     day: number;
     subject: string;
   }> {
-    const daysElapsed = this.database.getDaysElapsed(lead.id);
-    const emailsToSend = [];
+    const daysElapsed = this.isPostgres
+      ? 999
+      : (this.database as LeadDatabase).getDaysElapsed(lead.id);
+    const emailsToSend: Array<{ template: string; day: number; subject: string }> =
+      [];
 
     const emailSequence = [
       { day: 0, template: "diagnostic_welcome", subject: "Bienvenida" },
@@ -245,10 +321,9 @@ export class DiagnosticTrigger {
     ];
 
     for (const emailConfig of emailSequence) {
-      // Para cron: incluir si ya debería haberse enviado
       if (
-        daysElapsed >= emailConfig.day &&
-        !this.database.wasEmailSent(lead.id, emailConfig.day)
+        daysElapsed >= emailConfig.day ||
+        this.isPostgres
       ) {
         emailsToSend.push(emailConfig);
       }
@@ -257,17 +332,16 @@ export class DiagnosticTrigger {
     return emailsToSend;
   }
 
-  /**
-   * Enviar emails programados
-   */
+  // -----------------------------------------------------------------------
+  // sendScheduledEmails
+  // -----------------------------------------------------------------------
   private async sendScheduledEmails(
     leadId: string,
     emails: Array<{ template: string; day: number; subject: string }>
   ): Promise<void> {
     for (const email of emails) {
       try {
-        // Registrar email como enviado
-        this.database.logEmailSent({
+        await this.logEmailSent({
           leadId,
           templateName: email.template,
           sequenceDay: email.day,
@@ -281,8 +355,7 @@ export class DiagnosticTrigger {
       } catch (error) {
         console.error(`❌ Error enviando email ${email.template}:`, error);
 
-        // Registrar error
-        this.database.logEmailSent({
+        await this.logEmailSent({
           leadId,
           templateName: email.template,
           sequenceDay: email.day,
@@ -293,12 +366,12 @@ export class DiagnosticTrigger {
     }
   }
 
-  /**
-   * Procesar emails programados (para cron jobs)
-   */
+  // -----------------------------------------------------------------------
+  // processScheduledEmails
+  // -----------------------------------------------------------------------
   async processScheduledEmails(): Promise<ScheduledEmailsResult> {
     try {
-      const pendingLeads = this.database.getLeadsPendingEmails();
+      const pendingLeads = await this.getLeadsPendingEmails();
       let processed = 0;
       let sent = 0;
       let failed = 0;
@@ -306,7 +379,6 @@ export class DiagnosticTrigger {
       console.log(`🔍 Procesando ${pendingLeads.length} leads pendientes`);
 
       for (const lead of pendingLeads) {
-        // FIX: Usar calculatePendingEmails
         const emailsToSend = this.calculatePendingEmails(lead);
 
         if (emailsToSend.length > 0) {
@@ -332,12 +404,12 @@ export class DiagnosticTrigger {
     }
   }
 
-  /**
-   * Obtener métricas
-   */
+  // -----------------------------------------------------------------------
+  // getMetrics
+  // -----------------------------------------------------------------------
   getMetrics(): DiagnosticMetrics {
     try {
-      const dbMetrics = this.database.getMetrics();
+      const dbMetrics = (this.database as LeadDatabase).getMetrics();
 
       return {
         totalLeads: dbMetrics.totalLeads,
@@ -354,9 +426,9 @@ export class DiagnosticTrigger {
     }
   }
 
-  /**
-   * Validar submission
-   */
+  // -----------------------------------------------------------------------
+  // validateSubmission
+  // -----------------------------------------------------------------------
   private validateSubmission(submission: DiagnosticSubmission): void {
     if (!submission.email || !this.isValidEmail(submission.email)) {
       throw new Error("Email inválido");
@@ -381,25 +453,16 @@ export class DiagnosticTrigger {
     }
   }
 
-  /**
-   * Validar email
-   */
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
 
-  /**
-   * Validar fecha
-   */
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
     return !isNaN(date.getTime());
   }
 
-  /**
-   * Cerrar conexión de base de datos
-   */
   close(): void {
     this.database.close();
   }
@@ -415,6 +478,8 @@ export const getDiagnosticTrigger = (): DiagnosticTrigger => {
   return diagnosticTriggerInstance;
 };
 
-export const createDiagnosticTrigger = (): DiagnosticTrigger => {
-  return new DiagnosticTrigger();
+export const createDiagnosticTrigger = (
+  database?: AnyLeadDatabase
+): DiagnosticTrigger => {
+  return new DiagnosticTrigger(database);
 };
